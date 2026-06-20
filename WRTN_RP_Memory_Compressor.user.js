@@ -140,11 +140,18 @@
       return;
     }
 
-    const dialog = document.querySelector('[role="dialog"]');
+   const dialogs = [
+  ...document.querySelectorAll(
+    '[role="dialog"]'
+  )
+];
 
-    if (!dialog) {
-      return;
-    }
+const dialog =
+  dialogs.find(d =>
+    d.innerText.includes(
+      '장기 기억'
+    )
+  );
 
     const txt = dialog.innerText;
     const match = txt.match(/총\s*(\d+)개/);
