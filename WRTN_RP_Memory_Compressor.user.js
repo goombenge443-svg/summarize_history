@@ -153,9 +153,14 @@ const dialog =
     )
   );
 
-    const txt = dialog.innerText;
-    const match = txt.match(/총\s*(\d+)개/);
-    const count = match ? Number(match[1]) : 0;
+const txt =
+  dialog?.innerText || '';
+
+const match =
+  txt.match(/총\s*(\d+)개/);
+
+const count =
+  match ? Number(match[1]) : 0;
 
     function getHealth(count) {
       if (count >= 50) return '🔴';
