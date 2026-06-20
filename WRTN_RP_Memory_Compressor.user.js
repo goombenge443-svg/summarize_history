@@ -140,7 +140,7 @@
       return;
     }
 
-   const dialogs = [
+    const dialogs = [
   ...document.querySelectorAll(
     '[role="dialog"]'
   )
@@ -219,26 +219,38 @@ notice.style.cssText = `
           .join('\n\n- - -\n\n');
 
         const output = `===== 장기기억 =====\n\n${text}\n\n===== 압축 지침 =====\n\n${COMPRESS_RULE}`;
-console.log(output);
-        const textarea =
-  document.createElement(
-    'textarea'
+try {
+
+  await navigator.clipboard.writeText(
+    output
   );
 
-textarea.value =
-  output;
+}
+catch(e){
 
-document.body.appendChild(
-  textarea
-);
+  const textarea =
+    document.createElement(
+      'textarea'
+    );
 
-textarea.select();
+  textarea.value =
+    output;
 
-document.execCommand(
-  'copy'
-);
+  document.body.appendChild(
+    textarea
+  );
 
-textarea.remove();
+  textarea.focus();
+
+  textarea.select();
+
+  document.execCommand(
+    'copy'
+  );
+
+  textarea.remove();
+
+}
 
         alert(`✅ 복사 완료\n\n장기기억 ${memories.length}개\n\n외부 LLM에 붙여넣어 주세요.`);
       } catch (error) {
