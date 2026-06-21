@@ -1,12 +1,17 @@
 // ==UserScript==
 // @name        WRTN RP Memory Compressor
 // @namespace   wrtn-memory-helper
-// @version     1.0
+// @version     1.1
 // @author      게으른굼벵이
 // @description 장기기억 압축 복사 도우미
 // @match       *://*.wrtn.ai/*
 // @grant       none
-// @homepageURL  https://github.com/goombenge443-svg/summarize_memory
+
+// @homepageURL https://github.com/goombenge443-svg/summarize_history
+
+// @updateURL   https://raw.githubusercontent.com/goombenge443-svg/summarize_history/main/WRTN_RP_Memory_Compressor.user.js
+// @downloadURL https://raw.githubusercontent.com/goombenge443-svg/summarize_history/main/WRTN_RP_Memory_Compressor.user.js
+
 // ==/UserScript==
 
 (function () {
@@ -173,21 +178,52 @@ const count =
     const btn = document.createElement('button');
 
     btn.id = 'wrtn-memory-copy';
-    btn.textContent = `🧠 압축 복사 ${health}${count}`;
+      const recentBtn =
+  document.createElement('button');
 
-    btn.style.cssText = `
-      position: sticky;
-      bottom: 10px;
-      display: block;
-      margin: 12px auto;
-      padding: 10px 16px;
-      border-radius: 999px;
-      border: none;
-      cursor: pointer;
-      background: #16a34a;
-      color: white;
-      z-index: 99999;
-    `;
+recentBtn.id =
+  'wrtn-memory-recent';
+
+recentBtn.textContent =
+  '📌 최신 압축 복사';
+
+recentBtn.style.cssText = `
+  width: 180px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  background: #eab308;
+  color: black;
+  font-weight: bold;
+  display:flex;
+justify-content:center;
+align-items:center;
+gap:4px;
+`;
+
+    btn.textContent = `🧠 전체 압축 복사 ${health}${count}`;
+
+btn.style.cssText = `
+  width: 180px;
+  position: sticky;
+  bottom: 10px;
+  display: block;
+  margin: 12px auto;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  background: #16a34a;
+  color: white;
+  font-weight: bold;
+  z-index: 99999;
+  white-space: nowrap;
+  display:flex;
+justify-content:center;
+align-items:center;
+gap:4px;
+`;
 const notice =
   document.createElement('div');
 
@@ -263,15 +299,150 @@ catch(e){
         alert(`오류 발생\n\nF12 콘솔 확인`);
       }
     };
+recentBtn.onclick = async () => {
 
-    const wrapper =
+  const n = Number(
+    prompt(
+      '최근 몇 개의 기억을 압축할까요?',
+      '20'
+    )
+  );
+
+  if (!n || n <= 0) {
+    return;
+  }
+
+  const accordions = [
+    ...document.querySelectorAll(
+      'h3 > button[aria-expanded]'
+    )
+  ];
+
+  accordions.forEach(btn => {
+
+    if (
+      btn.getAttribute(
+        'aria-expanded'
+      ) === 'false'
+    ) {
+      btn.click();
+    }
+
+  });
+
+  await new Promise(
+    r => setTimeout(r,4000)
+  );
+
+  const memories = [
+    ...document.querySelectorAll(
+      '[role="region"] .pb-4.pt-0'
+    )
+  ];
+
+  const selected =
+    memories.slice(
+      0,
+      n
+    );
+
+  const text =
+    selected
+      .map(
+        x => x.innerText
+      )
+      .join(
+        '\n\n- - -\n\n'
+      );
+
+  const output =
+
+`===== 장기기억 =====
+
+${text}
+
+===== 압축 지침 =====
+
+${COMPRESS_RULE}`;
+
+  try {
+
+    await navigator.clipboard
+      .writeText(output);
+
+  }
+
+  catch(e){
+
+    const textarea =
+      document.createElement(
+        'textarea'
+      );
+
+    textarea.value =
+      output;
+
+    document.body.appendChild(
+      textarea
+    );
+
+    textarea.focus();
+
+    textarea.select();
+
+    document.execCommand(
+      'copy'
+    );
+
+    textarea.remove();
+
+  }
+
+  alert(
+
+`✅ 최근 ${selected.length}개 복사 완료`
+
+  );
+
+};
+const wrapper =
   document.createElement('div');
 
-wrapper.appendChild(btn);
+wrapper.style.cssText = `
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+  margin-bottom:12px;
+`;
+
+const buttonRow =
+  document.createElement('div');
+
+buttonRow.style.cssText = `
+  display:flex;
+  gap:8px;
+  justify-content:center;
+  align-items:center;
+`;
+
+buttonRow.appendChild(btn);
+buttonRow.appendChild(recentBtn);
+
+wrapper.appendChild(buttonRow);
 wrapper.appendChild(notice);
 
-dialog.appendChild(wrapper);
-  }
+const footer =
+  dialog.querySelector(
+    '.flex.flex-col-reverse'
+  );
+
+if (footer) {
+
+  footer.before(wrapper);
+
+}
+}
 
   setInterval(createButton, 1500);
 
