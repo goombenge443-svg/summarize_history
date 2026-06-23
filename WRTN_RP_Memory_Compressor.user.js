@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        WRTN RP Memory Compressor
 // @namespace   wrtn-memory-helper
-// @version     1.1
+// @version     1.5
 // @author      게으른굼벵이
 // @description 장기기억 압축 복사 도우미
 // @match       *://*.wrtn.ai/*
@@ -113,8 +113,8 @@
 
 ## 출력 규칙
 
-* 각 장기기억은 반드시 개별 코드블럭으로 출력
-* 코드블럭 하나 = 장기기억 하나
+* 모든 압축 결과를 하나의 코드블럭(sum) 안에 출력
+* 각 장기기억은 반드시 ✅ 제목으로 시작
 * 제목 포함
 * 제목 최대 20자
 * 제목 권장 17자 내외
@@ -128,7 +128,7 @@
 
 제목
 
-🔸 사건 요약 제목
+✅ 사건 요약 제목
 
 본문
 
@@ -161,6 +161,10 @@ const dialog =
 const txt =
   dialog?.innerText || '';
 
+      if (!dialog) {
+  return;
+}
+
 const match =
   txt.match(/총\s*(\d+)개/);
 
@@ -183,9 +187,29 @@ const count =
 
 recentBtn.id =
   'wrtn-memory-recent';
+const noteBtn =
+  document.createElement('button');
+
+noteBtn.textContent =
+  '📝 메모장';
+
+noteBtn.style.cssText = `
+  width: 180px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  background: #3b82f6;
+  color: white;
+  font-weight: bold;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:4px;
+`;
 
 recentBtn.textContent =
-  '📌 최신 압축 복사';
+  '🎯 선택 압축';
 
 recentBtn.style.cssText = `
   width: 180px;
@@ -228,7 +252,7 @@ const notice =
   document.createElement('div');
 
 notice.textContent =
-  '압축할 기억까지 메모리를 스크롤 내려주세요';
+  '메모리에서 스크롤 내려주세요';
 
 notice.style.cssText = `
   text-align:center;
@@ -301,61 +325,331 @@ catch(e){
     };
 recentBtn.onclick = async () => {
 
-  const n = Number(
-    prompt(
-      '최근 몇 개의 기억을 압축할까요?',
-      '20'
-    )
-  );
+const accordions = [
+...document.querySelectorAll(
+'h3 > button[aria-expanded]'
+)
+];
 
-  if (!n || n <= 0) {
-    return;
-  }
+accordions.forEach(btn => {
 
-  const accordions = [
-    ...document.querySelectorAll(
-      'h3 > button[aria-expanded]'
-    )
-  ];
 
-  accordions.forEach(btn => {
+if (
+  btn.getAttribute(
+    'aria-expanded'
+  ) === 'false'
+) {
+  btn.click();
+}
 
-    if (
-      btn.getAttribute(
-        'aria-expanded'
-      ) === 'false'
-    ) {
-      btn.click();
-    }
 
+});
+
+await new Promise(
+r => setTimeout(r, 4000)
+);
+
+const memories = [
+...document.querySelectorAll(
+'[role="region"] .pb-4.pt-0'
+)
+];
+
+const modal =
+document.createElement('div');
+
+modal.style.cssText = `     position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.65);
+    z-index:999999;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+  `;
+
+const box =
+document.createElement('div');
+
+box.style.cssText = `     width:700px;
+    max-width:90vw;
+    height:80vh;
+    background:#1e1e1e;
+    border-radius:12px;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  `;
+
+const title =
+document.createElement('div');
+
+title.textContent =
+'🎯 압축할 기억 선택';
+
+title.style.cssText = `     padding:14px;
+    font-weight:bold;
+    color:white;
+    border-bottom:
+      1px solid #374151;
+  `;
+
+const list =
+document.createElement('div');
+
+list.style.cssText = `     flex:1;
+    overflow:auto;
+    padding:10px;
+  `;
+
+const selectedCount =
+document.createElement('div');
+
+selectedCount.style.cssText = `     padding:8px 12px;
+    color:#9ca3af;
+    font-size:12px;
+  `;
+
+const checkboxes = [];
+
+memories.forEach(
+(memory, index) => {
+
+
+  const titleText =
+    memory.innerText
+      .split('\n')[0]
+      .trim();
+
+  const row =
+    document.createElement(
+      'label'
+    );
+
+  row.style.cssText = `
+    display:flex;
+    gap:8px;
+    padding:8px;
+    color:white;
+    cursor:pointer;
+    border-radius:6px;
+  `;
+
+  const checkbox =
+    document.createElement(
+      'input'
+    );
+
+  checkbox.type =
+    'checkbox';
+
+  checkbox.checked =
+    !titleText.startsWith(
+      '✅'
+    );
+
+  checkboxes.push({
+    checkbox,
+    memory
   });
 
-  await new Promise(
-    r => setTimeout(r,4000)
+  row.appendChild(
+    checkbox
   );
 
-  const memories = [
-    ...document.querySelectorAll(
-      '[role="region"] .pb-4.pt-0'
+  row.appendChild(
+    document.createTextNode(
+      `${index + 1}. ${titleText}`
     )
-  ];
+  );
+
+  list.appendChild(
+    row
+  );
+
+}
+
+
+);
+
+const updateCount =
+() => {
+
+
+  selectedCount.textContent =
+    `선택됨: ${
+      checkboxes.filter(
+        x => x.checkbox.checked
+      ).length
+    }개`;
+
+};
+
+
+checkboxes.forEach(
+x =>
+x.checkbox.addEventListener(
+'change',
+updateCount
+)
+);
+
+updateCount();
+
+const footer =
+document.createElement('div');
+
+footer.style.cssText = `     display:flex;
+    gap:8px;
+    padding:12px;
+    border-top:
+      1px solid #374151;
+  `;
+
+const selectAll =
+document.createElement(
+'button'
+);
+
+selectAll.textContent =
+'전체선택';
+
+const clearAll =
+document.createElement(
+'button'
+);
+
+clearAll.textContent =
+'전체해제';
+
+    const cancelBtn =
+document.createElement(
+'button'
+);
+
+cancelBtn.textContent =
+'취소';
+
+const confirmBtn =
+document.createElement(
+'button'
+);
+
+confirmBtn.textContent =
+'선택 압축';
+
+[
+  selectAll,
+  clearAll,
+  cancelBtn,
+  confirmBtn
+].forEach(
+btn => {
+
+
+  btn.style.cssText = `
+    flex:1;
+    padding:10px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:bold;
+  `;
+
+}
+);
+selectAll.style.background =
+  '#16a34a';
+
+selectAll.style.color =
+  'white';
+
+clearAll.style.background =
+  '#ef4444';
+
+clearAll.style.color =
+  'white';
+
+cancelBtn.style.background =
+  '#6b7280';
+
+cancelBtn.style.color =
+  'white';
+
+confirmBtn.style.background =
+  '#2563eb';
+
+confirmBtn.style.color =
+  'white';
+
+selectAll.onclick =
+() => {
+
+
+  checkboxes.forEach(
+    x =>
+      x.checkbox.checked =
+        true
+  );
+
+  updateCount();
+
+};
+
+
+clearAll.onclick =
+() => {
+
+  checkboxes.forEach(
+    x =>
+      x.checkbox.checked =
+        false
+  );
+
+  updateCount();
+
+};
+
+cancelBtn.onclick =
+() => {
+
+  modal.remove();
+
+};
+
+confirmBtn.onclick =
+async () => {
 
   const selected =
-    memories.slice(
-      0,
-      n
+    checkboxes
+      .filter(
+        x =>
+          x.checkbox.checked
+      )
+      .map(
+        x => x.memory
+      );
+
+  if (
+    selected.length === 0
+  ) {
+    alert(
+      '기억을 선택하세요'
     );
+    return;
+  }
 
   const text =
     selected
       .map(
-        x => x.innerText
+        x =>
+          x.innerText
       )
       .join(
         '\n\n- - -\n\n'
       );
 
   const output =
+
 
 `===== 장기기억 =====
 
@@ -365,43 +659,314 @@ ${text}
 
 ${COMPRESS_RULE}`;
 
-  try {
 
-    await navigator.clipboard
-      .writeText(output);
-
-  }
-
-  catch(e){
-
-    const textarea =
-      document.createElement(
-        'textarea'
-      );
-
-    textarea.value =
-      output;
-
-    document.body.appendChild(
-      textarea
+  await navigator
+    .clipboard
+    .writeText(
+      output
     );
 
-    textarea.focus();
-
-    textarea.select();
-
-    document.execCommand(
-      'copy'
-    );
-
-    textarea.remove();
-
-  }
+  modal.remove();
 
   alert(
 
-`✅ 최근 ${selected.length}개 복사 완료`
 
+`✅ 선택 기억 ${selected.length}개 복사 완료`
+);
+
+
+};
+
+
+footer.appendChild(
+selectAll
+);
+
+footer.appendChild(
+clearAll
+);
+
+footer.appendChild(
+cancelBtn
+);
+
+footer.appendChild(
+confirmBtn
+);
+
+box.appendChild(
+title
+);
+
+box.appendChild(
+selectedCount
+);
+
+box.appendChild(
+list
+);
+
+box.appendChild(
+footer
+);
+
+modal.appendChild(
+box
+);
+
+document.body.appendChild(
+modal
+);
+
+};
+
+noteBtn.onclick = () => {
+
+  let panel =
+    document.getElementById(
+      'wrtn-note-panel'
+    );
+
+  if (panel) {
+
+    panel.style.display =
+      panel.style.display === 'none'
+      ? 'flex'
+      : 'none';
+
+    return;
+  }
+
+  panel =
+    document.createElement('div');
+
+  panel.id =
+    'wrtn-note-panel';
+
+  panel.style.cssText = `
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    width: 420px;
+    height: 500px;
+    background: #1e1e1e;
+    border: 1px solid #374151;
+    border-radius: 12px;
+    z-index: 999999;
+    display: flex;
+    flex-direction: column;
+    box-shadow:
+      0 10px 25px
+      rgba(0,0,0,0.4);
+  `;
+
+  const header =
+    document.createElement('div');
+
+  header.style.cssText = `
+    padding: 12px;
+    color: white;
+    font-weight: bold;
+    border-bottom:
+      1px solid #374151;
+    display:flex;
+    justify-content:
+      space-between;
+    align-items:center;
+  `;
+
+  header.innerHTML = `
+    <span>📝 압축 메모장</span>
+  `;
+
+  const minimize =
+    document.createElement(
+      'button'
+    );
+
+  minimize.textContent = '─';
+
+  minimize.style.cssText = `
+    background:none;
+    border:none;
+    color:white;
+    cursor:pointer;
+    font-size:18px;
+  `;
+
+  header.appendChild(
+    minimize
+  );
+
+  const textarea =
+    document.createElement(
+      'textarea'
+    );
+
+  textarea.value =
+    localStorage.getItem(
+      'wrtn_memory_note'
+    ) || '';
+
+  textarea.style.cssText = `
+    flex:1;
+    resize:none;
+    border:none;
+    outline:none;
+    padding:12px;
+    background:#111827;
+    color:white;
+    font-size:13px;
+    line-height:1.5;
+  `;
+
+  const footer =
+    document.createElement(
+      'div'
+    );
+
+  footer.style.cssText = `
+    padding:10px;
+    display:flex;
+    gap:8px;
+    border-top:
+      1px solid #374151;
+  `;
+
+  const saveBtn =
+    document.createElement(
+      'button'
+    );
+
+  saveBtn.textContent =
+    '저장';
+
+  const loadBtn =
+    document.createElement(
+      'button'
+    );
+
+  loadBtn.textContent =
+    '불러오기';
+
+  const clearBtn =
+    document.createElement(
+      'button'
+    );
+
+  clearBtn.textContent =
+    '비우기';
+
+  [
+    saveBtn,
+    loadBtn,
+    clearBtn
+  ].forEach(btn => {
+
+    btn.style.cssText = `
+      flex:1;
+      padding:8px;
+      border:none;
+      border-radius:8px;
+      cursor:pointer;
+      font-weight:bold;
+    `;
+
+  }
+ );
+
+  saveBtn.style.background =
+    '#16a34a';
+
+  saveBtn.style.color =
+    'white';
+
+  loadBtn.style.background =
+    '#2563eb';
+
+  loadBtn.style.color =
+    'white';
+
+  clearBtn.style.background =
+    '#dc2626';
+
+  clearBtn.style.color =
+    'white';
+
+  saveBtn.onclick = () => {
+
+    localStorage.setItem(
+      'wrtn_memory_note',
+      textarea.value
+    );
+
+    alert(
+      '메모 저장 완료'
+    );
+
+  };
+
+  loadBtn.onclick = () => {
+
+    textarea.value =
+      localStorage.getItem(
+        'wrtn_memory_note'
+      ) || '';
+
+  };
+
+  clearBtn.onclick = () => {
+
+    if (
+      confirm(
+        '메모를 비울까요?'
+      )
+    ) {
+
+      textarea.value = '';
+
+      localStorage.removeItem(
+        'wrtn_memory_note'
+      );
+
+    }
+
+  };
+
+  minimize.onclick =
+    () => {
+
+      panel.style.display =
+        'none';
+
+    };
+
+  footer.appendChild(
+    saveBtn
+  );
+
+  footer.appendChild(
+    loadBtn
+  );
+
+  footer.appendChild(
+    clearBtn
+  );
+
+  panel.appendChild(
+    header
+  );
+
+  panel.appendChild(
+    textarea
+  );
+
+  panel.appendChild(
+    footer
+  );
+
+  document.body.appendChild(
+    panel
   );
 
 };
@@ -428,6 +993,7 @@ buttonRow.style.cssText = `
 
 buttonRow.appendChild(btn);
 buttonRow.appendChild(recentBtn);
+buttonRow.appendChild(noteBtn);
 
 wrapper.appendChild(buttonRow);
 wrapper.appendChild(notice);
