@@ -252,7 +252,7 @@ const notice =
   document.createElement('div');
 
 notice.textContent =
-  '메모리에서 스크롤 내려주세요';
+  '사용 전, 장기기억 메모리에서 스크롤을 내려주세요';
 
 notice.style.cssText = `
   text-align:center;
