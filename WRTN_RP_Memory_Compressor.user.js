@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        WRTN RP Memory Compressor
 // @namespace   wrtn-memory-helper
-// @version     1.51
+// @version     1.6
 // @author      게으른굼벵이
 // @description 장기기억 압축 복사 도우미
 // @match       *://*.wrtn.ai/*
@@ -252,7 +252,7 @@ const notice =
   document.createElement('div');
 
 notice.textContent =
-  '사용 전, 장기기억 메모리에서 스크롤을 내려주세요';
+  '압축 전, 장기기억 메모리에서 스크롤을 내려주세요';
 
 notice.style.cssText = `
   text-align:center;
